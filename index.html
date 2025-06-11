@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ESP32 LED Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    button { padding: 1rem 2rem; font-size: 1.2rem; margin: 1rem; }
+    #status { margin-top: 2rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>ESP32 LED Control</h1>
+  <button onclick="connect()">🔌 Connect</button><br>
+  <button onclick="sendCommand('1')">💡 Turn On</button>
+  <button onclick="sendCommand('0')">💤 Turn Off</button>
+  <div id="status">Status: Not connected</div>
+
+  <script>
+    let device;
+    let characteristic;
+    const serviceUuid = "12345678-1234-1234-1234-1234567890ab";
+    const characteristicUuid = "abcd1234-ab12-cd34-ef56-abcdef123456";
+
+    async function connect() {
+      try {
+        device = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'ESP32' }],
+          optionalServices: [serviceUuid]
+        });
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(serviceUuid);
+        characteristic = await service.getCharacteristic(characteristicUuid);
+        document.getElementById('status').textContent = 'Status: Connected ✅';
+      } catch (error) {
+        console.error(error);
+        document.getElementById('status').textContent = 'Status: Error ❌';
+      }
+    }
+
+    async function sendCommand(value) {
+      if (!characteristic) {
+        alert("Not connected to device!");
+        return;
+      }
+      const encoder = new TextEncoder();
+      await characteristic.writeValue(encoder.encode(value));
+      document.getElementById('status').textContent = `Status: Sent "${value}"`;
+    }
+  </script>
+</body>
+</html>
