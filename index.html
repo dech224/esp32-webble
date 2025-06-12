@@ -25,16 +25,20 @@
 
     async function connect() {
       try {
+        console.log("🔍 Requesting Bluetooth device...");
         device = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: 'ESP32' }],
+          acceptAllDevices: true,  // broader compatibility than filters
           optionalServices: [serviceUuid]
         });
+
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(serviceUuid);
         characteristic = await service.getCharacteristic(characteristicUuid);
+
         document.getElementById('status').textContent = 'Status: Connected ✅';
+        console.log("✅ Connected to device:", device.name);
       } catch (error) {
-        console.error(error);
+        console.error("❌ Connection failed:", error);
         document.getElementById('status').textContent = 'Status: Error ❌';
       }
     }
@@ -44,9 +48,15 @@
         alert("Not connected to device!");
         return;
       }
-      const encoder = new TextEncoder();
-      await characteristic.writeValue(encoder.encode(value));
-      document.getElementById('status').textContent = `Status: Sent "${value}"`;
+      try {
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(value));
+        document.getElementById('status').textContent = `Status: Sent "${value}"`;
+        console.log("📤 Sent command:", value);
+      } catch (error) {
+        console.error("❌ Write failed:", error);
+        document.getElementById('status').textContent = 'Status: Write failed ❌';
+      }
     }
   </script>
 </body>
